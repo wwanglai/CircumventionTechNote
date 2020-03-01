@@ -1,4 +1,6 @@
 # ShadowsocksX-NG 的安装及设置
+## 官网参考
+   * [shadowsocks - Clients](https://shadowsocks.org/en/download/clients.html)<br>
 ## 下载
    * 地址：[shadowsocks/ShadowsocksX-NG](https://github.com/shadowsocks/ShadowsocksX-NG/releases)<br>
 ## 安装步骤
