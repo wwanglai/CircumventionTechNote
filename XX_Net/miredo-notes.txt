@@ -1,0 +1,154 @@
+
+----------[ IPv6 from behind a NAT: Miredo ]----------
+
+If Tunnelbroker doesn't work for you, you can use "miredo" instead,
+for the Teredo tunneling protocol (developed originally by Microsoft
+for working around the NATs). Miredo code is available here:
+http://www.pps.univ-paris-diderot.fr/~jch/software/ipv6-connectivity.html
+and the binaries can be installed on Linux with "apt-get install miredo"
+and under MacPorts with "port install miredo" respectively.
+
+You will need to understand it well to use it (and watch out for the
+miredo daemon crashing). Miredo will connect over IPv6 to one of the
+Teredo protocol servers; the server will automatically give you a
+dynamic IPv6 address, which will go away once your connection goes
+away. Unlike Tunnelbroker, you won't get a subnet of your own, but,
+on the plus side, configuration on Linux is trivial.
+
+A port of Miredo also exists for MacOS X, but "your mileage may
+vary". Here is the story of my attempts to install it on Yosemite,
+with explanations.
+
+------[ begin log ]------
+bash-3.2# port search teredo
+Warning: port definitions are more than two weeks old, consider updating them by running 'port selfupdate'.
+miredo @1.2.2_1 (net)
+    Miredo is an open-source Teredo IPv6 tunneling software
+bash-3.2# port install miredo
+    Warning: port definitions are more than two weeks old, consider updating them by running 'port selfupdate'.
+    --->  Computing dependencies for miredo
+    --->  Cleaning miredo
+    --->  Scanning binaries for linking errors
+    --->  No broken files found.
+bash-3.2# ps ax | grep miredo
+
+[Nothing. Miredo client is not running.]
+
+bash-3.2# miredo -f
+User "miredo": User not found
+
+[Starting it in debug mode (see miredo -h). It exits on error; being a Linux program,
+ miredo client expects a separate user for itself to exist, to drop privige to once
+ it has started. Ask me if you don't understand this design decision.]
+
+[So for now I will run it as my own user.]
+
+bash-3.2# miredo -f -u user
+Nov 16 22:34:27 mymac miredo[47898] <Info>: Starting...
+Nov 16 22:34:27 mymac miredo[47899] <Error>: Tunneling driver error (/dev/tun*): Undefined error: 0
+Nov 16 22:34:27 mymac miredo[47899] <Error>: BSD tunneling interface creation failure
+Nov 16 22:34:27 mymac miredo[47899] <Alert>: Miredo setup failure: Cannot create IPv6 tunnel
+
+[So miredo needs a TUN/TAP device loaded by the kernel to operate. Recall that Apple has
+ disabled loading of unsigned kernel extensions; so we need to work around this. Kill the process, start again]
+
+^CNov 16 22:34:35 mymac miredo[47898] <Notice>: Exiting on signal 2 (Interrupt: 2)
+Nov 16 22:34:35 mymac miredo[47898] <Notice>: Child 47899 exited (code: 1)
+Nov 16 22:34:35 mymac miredo[47898] <Info>: Terminated with error(s).
+
+[Now load a signed version of the TUN driver. Luckily, Tunnelblick's developers paid Apple for
+ the privilege of signing it, and were kind enough to share it. Hence I am loading their signed version.
+ Of course, you will need to install Tunnelblick for this, https://tunnelblick.net/downloads.html]
+
+bash-3.2# kextutil -d /Applications/Tunnelblick.app/Contents/Resources/tun-signed.kext -b net.tunnelblick.tun
+
+[Now I start the miredo process, and it succeeds.] 
+
+bash-3.2# miredo -f -u user
+Nov 16 22:34:46 mymac miredo[47903] <Info>: Starting...
+Nov 16 22:34:46 mymac miredo[47904] <Notice>: New Teredo address/MTU
+Nov 16 22:34:46 mymac miredo[47904] <Notice>: Teredo pseudo-tunnel started
+Nov 16 22:34:46 mymac miredo[47904] <Info>:  (address: 2001::53aa:64c:2439:ab1:b7a0:89d3, MTU: 1280)
+route: writing to routing socket: not in table
+delete net default: not in table
+add net default: gateway tun0
+Nov 16 22:34:47 mymac miredo[47904] <Debug>: Internal IPv4 address: 192.168.1.45
+Nov 16 22:34:47 mymac miredo[47904] <Debug>:  packet passed to maintenance procedure
+<skipped more>
+
+[Now you don't need -f. I restarted miredo without it, so that it goes into background.]
+
+^CNov 16 22:59:27 mymac miredo[47903] <Notice>: Exiting on signal 2 (Interrupt: 2)
+ifconfig: SIOCIFDESTROY: Invalid argument
+Nov 16 22:59:27 mymac miredo[47903] <Notice>: Child 47904 exited (code: 0)
+Nov 16 22:59:27 mymac miredo[47903] <Info>: Terminated with no error.
+
+[And now I restart it again.]
+
+bash-3.2# miredo -u user
+bash-3.2# ping 2001:4860:4860::8888
+ping: cannot resolve 2001:4860:4860::8888: Unknown host
+
+[Silly me, I need ping6!]
+
+bash-3.2# ping6 2001:4860:4860::8888
+PING6(56=40+8+8 bytes) 2001::53aa:64c:200d:baa:b7a0:89d3 --> 2001:4860:4860::8888
+16 bytes from 2001:4860:4860::8888, icmp_seq=1 hlim=57 time=101.245 ms
+16 bytes from 2001:4860:4860::8888, icmp_seq=2 hlim=57 time=99.653 ms
+^C
+--- 2001:4860:4860::8888 ping6 statistics ---
+3 packets transmitted, 2 packets received, 33.3% packet loss
+round-trip min/avg/max/std-dev = 99.653/100.449/101.245/0.796 ms
+
+[The first few packets are lost, but it's normal. Remember, your Teredo client
+ is a userland process, and so is the server it contacts for you to create the
+ tunnel; initial setup takes its time.]
+
+[But now you should see no packets lost, unless your ISP is quite unreliable.]
+
+bash-3.2# ping6 2001:4860:4860::8888
+PING6(56=40+8+8 bytes) 2001::53aa:64c:200d:baa:b7a0:89d3 --> 2001:4860:4860::8888
+16 bytes from 2001:4860:4860::8888, icmp_seq=0 hlim=57 time=99.107 ms
+16 bytes from 2001:4860:4860::8888, icmp_seq=1 hlim=57 time=100.296 ms
+16 bytes from 2001:4860:4860::8888, icmp_seq=2 hlim=57 time=100.298 ms
+^C
+--- 2001:4860:4860::8888 ping6 statistics ---
+3 packets transmitted, 3 packets received, 0.0% packet loss
+round-trip min/avg/max/std-dev = 99.107/99.900/100.298/0.561 ms
+
+[Finally, let's find out where my tunnel actually goes in IPv6 space.]
+
+bash-3.2# ifconfig tun0
+tun0: flags=8851<UP,POINTOPOINT,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+      inet6 fe80::62f8:1dff:fexx:xxxx%tun0 prefixlen 64 scopeid 0x13
+      inet6 fe80::ffff:ffff:ffff%tun0 prefixlen 64 scopeid 0x13
+      inet6 2001::53aa:64c:200d:baa:b7a0:89d3 prefixlen 128
+      nd6 options=1<PERFORMNUD>
+      open (pid 48077)
+
+[This info tells me both the local-link addresses---derived from my
+MAC address 60:f8:1d:xx:xx:xx, where I changed my actual MAC's three last bytes
+to xx xx xx---and my global IPv6 address assigned by Teredo, starting with 2001:53aa:...]
+
+[So my IPv6 addres created by Teredo is 2001::53aa:64c:200d:baa:b7a0:89d3.
+ It is valid so long as my miredo client process is running, my laptop is
+ connected, and the Teredo server I am connecting to is happy with me/it.]
+
+[To test this, I created a different tunnel from a different machine, with a
+ different IPv6 address. From that system:]
+
+other:/home/sergey# ping6 2001::53aa:64c:200d:baa:b7a0:89d3
+PING 2001::53aa:64c:200d:baa:b7a0:89d3(2001:0:53aa:64c:200d:baa:b7a0:89d3) 56 data bytes
+64 bytes from 2001:0:53aa:64c:200d:baa:b7a0:89d3: icmp_seq=1 ttl=61 time=862 ms
+64 bytes from 2001:0:53aa:64c:200d:baa:b7a0:89d3: icmp_seq=2 ttl=61 time=475 ms
+64 bytes from 2001:0:53aa:64c:200d:baa:b7a0:89d3: icmp_seq=3 ttl=61 time=398 ms
+64 bytes from 2001:0:53aa:64c:200d:baa:b7a0:89d3: icmp_seq=4 ttl=61 time=318 ms
+64 bytes from 2001:0:53aa:64c:200d:baa:b7a0:89d3: icmp_seq=5 ttl=61 time=239 ms
+
+--- 2001::53aa:64c:200d:baa:b7a0:89d3 ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4000ms
+
+[Yay! I am reachable over IPv6, and I can even send ICMPv6 packets between my
+ machines. Thank you Teredo!]
+
+------[ end log ]------

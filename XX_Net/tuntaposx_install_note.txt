@@ -1,0 +1,56 @@
+MacPorts 编译目录为：
+/System/Library/Frameworks/Kernel.framework/Headers
+但不存在。
+用mdfind -onlyin /Library Kernal
+找到
+Kernel.framework/Headers的目录为：
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Versions/Current
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Versions/A
+
+需要建立链接
+ln -s /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Versions/Current/Headers /System/Library/Frameworks/Kernel.framework/Headers
+
+之后
+sudo port clean tuntaposx
+  492  sudo port install tuntaposx
+  493  sudo port install miredo
+  494  port -f activate tuntaposx
+
+就可以安装
+miredo了
+sudo port install miredo
+------------------------
+MacPort的安装是用.configure &&make&&makeinstall?
+miredo是用MacPort安装的
+
+另：不知是否需要安装：brew install gcc
+
+code/default/gae_proxy/local/ipv6_tunnel/pteredor.py可以测试哪个IP v6服务器最快
+
+反安装：
+
+sudo port uninstall miredo 与clean 什么区别？
+sudo port uninstall tuntaposx
+
+sudo port install tuntaposx
+
+
+   tuntaposx has the following notes:
+    A startup item has been generated that will aid in starting tuntaposx with
+    launchd. It is disabled by default. Execute the following command to start
+    it, and to cause it to launch at startup:
+    
+
+
+
+
+
+        sudo port load tuntaposx
+
+
+  miredo has the following notes:
+    A startup item has been generated that will aid in starting miredo with
+    launchd. It is disabled by default. Execute the following command to start
+    it, and to cause it to launch at startup:
+    
+        sudo port load miredo
