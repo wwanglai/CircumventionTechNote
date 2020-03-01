@@ -7,9 +7,11 @@
    * 
 ## 替代的App - ClashX
    * 下载地址
-      - [yichengchen/clashX]()<br>
+      - [yichengchen/clashX](https://github.com/yichengchen/clashX/releases)<br>
    * 使用教程
       - [Mac技巧之苹果电脑 macOS 系统上开源免费的 shadowsocks 客户端软件：ClashX](https://www.mac52ipod.cn/post/apple-mac-macos-shadowsocks-client-app-clashx.php)<br>
+   * 项目地址
+      - [yichengchen/clashX](https://github.com/yichengchen/clashX/tree/master)<br>
 
 # SSR
 ## 参考
