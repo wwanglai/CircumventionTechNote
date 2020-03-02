@@ -18,3 +18,5 @@
    * [SSR MacOS 客户端下载安装与使用教程](https://ssr.tools/164)<br>
    * [Mac中的Shadowsocks客户端](https://crifan.github.io/scientific_network_summary/website/server_client_mode/ss_client/ss_clients/ss_mac.html)<br>
    
+# 推荐的机场
+   * [崽崽云](http://zaizaicloud.pw/user##) - 2020-03-02前测试可用<br>
